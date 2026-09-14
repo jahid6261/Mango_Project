@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session
 
 
 from src.users.schemas import (UserProfileResponse,LoginResponse,UserRegistrationRequest, UserLoginRequest,
+                               ForgotPasswordRequest,ResetPasswordRequest,UpdateProfileRequest,ChangePasswordRequest
                                
 )
 from src.users import services
 from src.utils.db import get_db
 from src.depends.auth_depends import require_user_id
+from src.depends.user_check import get_current_user
 from typing import Annotated
 from src.users.models import UserModel
 from sqlalchemy import select
@@ -74,6 +76,49 @@ async def profile(
   return await services.profile(     user["user_id"] ,db)
 
 
+@users_routes.patch("/profile", response_model=UserProfileResponse)
+async def update_profile(
+    request: UpdateProfileRequest,
+    user=Depends(require_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    return await services.update_profile(
+        request,
+        user["user_id"],
+        db
+    )
+
+@users_routes.post("/forget-password")
+async def forget_user_password (request:ForgotPasswordRequest, db:AsyncSession=Depends(get_db)):
+
+    await services.forget_password(
+        db,email=request.email
+    )
 
 
+@users_routes.post("/reset-password", status_code=status.HTTP_200_OK)
+async def resets_password(
+    request: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    return await services.reset_password(
+        db=db,
+        email=request.email,
+        otp=request.otp,
+        new_password=request.new_password,
+    )
 
+
+@users_routes.patch("/change-password")
+async def user_change_password(
+    request: ChangePasswordRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await services.change_password(
+        user=current_user,
+        current_password=request.current_password,
+        new_password=request.new_password,
+        confirm_password=request.confirm_password,
+        db=db,
+    )

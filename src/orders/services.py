@@ -8,15 +8,14 @@ from src.orders.schemas import  OrderResponse,CheckoutSchema
 from src.mango_product.models import MangoProduct
 from src.users.models import UserModel
 import traceback
+from src.utils.email import send_order_confirmation_email
 
 
 
-
-
-async def checkout_order(
+async def create_order(
     checkout_data: CheckoutSchema,
     db: AsyncSession,
-    user_id: int,
+    current_user: UserModel,
 ):
 
     # Get product
@@ -58,19 +57,18 @@ async def checkout_order(
 
     # Calculate delivery charge
     if checkout_data.city.strip().lower() == "dhaka":
-      delivery_zone = "dhaka"
-      delivery_charge = Decimal("100")
+        delivery_zone = "dhaka"
+        delivery_charge = Decimal("100")
     else:
-      delivery_zone = "outside_dhaka"
-      delivery_charge = Decimal("150")
-   
+        delivery_zone = "outside_dhaka"
+        delivery_charge = Decimal("150")
 
     # Calculate final price
     final_price = total_price + delivery_charge
 
     # Create order
     order = Order(
-        user_id=user_id,
+        user_id=current_user.id,
         product_id=product.id,
         quantity=quantity,
         total_price=total_price,
@@ -89,97 +87,90 @@ async def checkout_order(
 
     db.add(order)
 
+    # Save order
     try:
         await db.commit()
         await db.refresh(order)
 
     except Exception as e:
-      await db.rollback()
-      print("ORDER CREATE ERROR:", type(e).__name__)
-      print("ORDER CREATE ERROR:", str(e))
-      raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=f"Failed to create order: {str(e)}",
-    )
+        await db.rollback()
+
+        print("ORDER CREATE ERROR:", type(e).__name__)
+        print("ORDER CREATE ERROR:", str(e))
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create order",
+        )
+
+    # Send order confirmation email
+    try:
+        send_order_confirmation_email(
+            to_email=current_user.email,
+            first_name=current_user.first_name,
+            order_id=order.id,
+            product_total=total_price,
+            delivery_charge=delivery_charge,
+            final_price=order.final_price,
+        )
+
+    except Exception as e:
+        print("ORDER EMAIL ERROR:", type(e).__name__)
+        print("ORDER EMAIL ERROR:", str(e))
 
     return order
 
-
-
-async def get_my_order(db: AsyncSession, user_id: int):
-
+async def get_my_order(
+    db: AsyncSession,
+    current_user: UserModel,
+):
     result = await db.execute(
-        select(UserModel).where(UserModel.id == user_id)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
+        select(Order).where(
+            Order.user_id == current_user.id
         )
-
-    result = await db.execute(
-        select(Order).where(Order.user_id == user_id)
     )
 
     orders = result.scalars().all()
 
     return [
-        OrderResponse(
-            id=order.id,
-            user_id=order.user_id,
-            product_id=order.product_id,
-            quantity=order.quantity,
-            total_price=float(order.total_price),
-            status=order.status.value
-        )
+        OrderResponse.model_validate(order)
         for order in orders
     ]
 
 
+async def get_order_by_id(
+    db: AsyncSession,
+    order_id: int,
+    current_user: UserModel,
+):
+    result = await db.execute(
+        select(Order).where(
+            Order.id == order_id,
+            Order.user_id == current_user.id,
+        )
+    )
 
-async def get_order_by_id(db:AsyncSession,order_id:int,user_id:int):
-
-    result =await db.execute(select(UserModel).
-                             where(UserModel.id==user_id))
-    user=result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404,detail='user not found')
-    
-
-
-    result=await db.execute(select(Order).where(Order.id==order_id,
-                                                Order.user_id==user_id))
-    
     order = result.scalar_one_or_none()
 
     if not order:
-        raise HTTPException(status_code=404,detail="order not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
 
-    return OrderResponse(
-        id=order.id,
-        user_id=order.user_id,
-        product_id=order.product_id,
-        quantity=order.quantity,
-        total_price=float(order.total_price),
-        status=order.status.value
-    )   
+    return order
 
 
 async def cancel_order(
     db: AsyncSession,
     order_id: int,
-    user_id: int,
+    current_user: UserModel,
 ):
     # Find user's order
     result = await db.execute(
         select(Order).where(
             Order.id == order_id,
-            Order.user_id == user_id,
+            Order.user_id == current_user.id,
         )
     )
 

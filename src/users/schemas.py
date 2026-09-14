@@ -1,4 +1,4 @@
-from pydantic import BaseModel,EmailStr,Field
+from pydantic import BaseModel,EmailStr,Field,ConfigDict
 from typing import Optional
 from src.users.models import UserRole 
 
@@ -33,24 +33,25 @@ class UserProfileResponse(BaseModel):
     address:str
     role:UserRole
     is_active: bool 
+    model_config = ConfigDict(from_attributes=True)
         
         
 class UpdateProfileRequest(BaseModel):
-    first_name: str
-    last_name: str
-    number: str
-    address: str
-
+    first_name: str | None = None
+    last_name: str | None = None
+    number: str | None = None
+    address: str | None = None
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    current_password: str
     new_password: str
-
+    confirm_password: str
 
 class ForgotPasswordRequest(BaseModel):
     email: str
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str    
+    email: str
+    otp: str
+    new_password: str  

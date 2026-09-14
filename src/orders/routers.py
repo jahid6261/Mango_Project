@@ -4,74 +4,70 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.orders.schemas import CheckoutSchema, OrderResponse
 from src.orders import services
 from src.utils.db import get_db
-from src.depends.auth_depends import require_user_id
+from src.depends.user_check import get_current_user
+from src.users.models import UserModel
+
 
 order_routes = APIRouter(
     prefix="/orders",
-    tags=["Orders"] 
+    tags=["Orders"]
 )
 
 
-
-@order_routes.post("/checkout",response_model=OrderResponse)
-
-async def checkout(
-    checkout_data:CheckoutSchema,
-    db:AsyncSession=Depends(get_db),
-    user=Depends(require_user_id),
-
+@order_routes.post(
+    "/checkout",
+    response_model=OrderResponse
+)
+async def order_create(
+    checkout_data: CheckoutSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
 ):
-
-    return await services.checkout_order(
+    return await services.create_order(
         checkout_data=checkout_data,
         db=db,
-        user_id=user["user_id"],
-      
+        current_user=current_user,
     )
 
 
-
-
-
-@order_routes.get("/my-orders")
+@order_routes.get(
+    "/my-orders",
+    response_model=list[OrderResponse]
+)
 async def get_my_order(
-    user = Depends(require_user_id),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
 ):
     return await services.get_my_order(
-        user_id=user['user_id'],
-        db=db
+        db=db,
+        current_user=current_user,
     )
 
 
-
-@order_routes.get("/{order_id}")
-
-async def get_order_by_id(order_id:int,user=Depends(require_user_id),
-                          db:AsyncSession=Depends(get_db)):
-    
+@order_routes.get(
+    "/{order_id}",
+    response_model=OrderResponse
+)
+async def get_order_by_id(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
     return await services.get_order_by_id(
-
         db=db,
         order_id=order_id,
-        user_id=user['user_id']
+        current_user=current_user,
     )
 
 
-
-@order_routes.patch("/orders/{order_id}/cancel")
+@order_routes.patch("/{order_id}/cancel")
 async def cancel_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
-    user=Depends(require_user_id),
+    current_user: UserModel = Depends(get_current_user),
 ):
     return await services.cancel_order(
         db=db,
         order_id=order_id,
-        user_id=user["user_id"],
+        current_user=current_user,
     )
-
-    
-
-
-

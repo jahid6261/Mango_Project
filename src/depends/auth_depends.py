@@ -22,4 +22,6 @@ async def require_user_id(
             status_code=401,
             detail="Unauthorized"
         )
-    
+
+
+

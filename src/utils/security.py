@@ -1,5 +1,6 @@
 import jwt
 import bcrypt
+import hashlib
 from datetime import datetime, timedelta, timezone
 from src.utils.settings import settings 
 
@@ -55,3 +56,9 @@ def verify_password(password: str, hashed_password: str) -> bool:
         password.encode("utf-8"),
         hashed_password.encode("utf-8"),
     )
+
+
+def hash_otp(otp: str) -> str:
+    return hashlib.sha256(
+        otp.encode("utf-8")
+    ).hexdigest()
