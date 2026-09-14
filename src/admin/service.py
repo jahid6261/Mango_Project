@@ -199,9 +199,7 @@ async def update_order_status(
     # Send email only after successful completion
     if order.status == OrderStatus.COMPLETED:
      try:
-       
-
-        send_order_completed_email(
+        email_result = send_order_completed_email(
             to_email=order.email,
             first_name=order.full_name,
             order_id=order.id,
@@ -210,7 +208,7 @@ async def update_order_status(
             final_price=order.final_price,
         )
 
-        
+        print("ORDER COMPLETED EMAIL RESULT:", email_result)
 
      except Exception as e:
         print("ORDER COMPLETED EMAIL ERROR:", type(e).__name__)
