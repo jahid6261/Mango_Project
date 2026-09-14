@@ -40,14 +40,13 @@ def email_utility(email_to: str, email_subject: str, email_body: str):
     """
 
 
-
 def email_utility(
     email_to: str,
     email_subject: str,
     email_body: str
 ):
     try:
-        response = resend.Emails.send_async({
+        response = resend.Emails.send({
             "from": settings.EMAIL_FROM,
             "to": [email_to],
             "subject": email_subject,
