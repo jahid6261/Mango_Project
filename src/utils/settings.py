@@ -12,15 +12,18 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str
 
     BASE_URL: str
-
+    
+    """
     EMAIL_HOST: str
     EMAIL_PORT: int
     EMAIL_USER: str
     EMAIL_PASSWORD: str
     EMAIL_FROM: str
+    """
     
    
-
+    RESEND_API_KEY: str
+    EMAIL_FROM: str
 
     # Cloudinary settings
     CLOUDINARY_CLOUD_NAME: str

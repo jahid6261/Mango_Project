@@ -16,5 +16,5 @@ python-multipart
 requests
 cloudinary
 PyJWT
-
+resend
 

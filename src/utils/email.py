@@ -1,10 +1,17 @@
+import resend
+#import smtplib
 
-import smtplib
-
-from email.mime.text import MIMEText
+#from email.mime.text import MIMEText
 from src.utils.settings import settings
 
 
+
+
+
+
+resend.api_key = settings.RESEND_API_KEY
+
+"""
 EMAIL_HOST = settings.EMAIL_HOST
 EMAIL_PORT = settings.EMAIL_PORT
 EMAIL_USER = settings.EMAIL_USER
@@ -30,6 +37,38 @@ def email_utility(email_to: str, email_subject: str, email_body: str):
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+    """
+
+
+
+def email_utility(
+    email_to: str,
+    email_subject: str,
+    email_body: str
+):
+    try:
+        response = resend.Emails.send_async({
+            "from": settings.EMAIL_FROM,
+            "to": [email_to],
+            "subject": email_subject,
+            "text": email_body,
+        })
+
+        return {
+            "success": True,
+            "message": f"Email sent to {email_to}",
+            "data": response
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+
+    
 
 def send_activation_email(
     to_email: str,
