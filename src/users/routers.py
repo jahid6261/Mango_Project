@@ -71,7 +71,7 @@ async def login(request:UserLoginRequest, db: AsyncSession = Depends(get_db)):
 @users_routes.get("/profile", response_model=UserProfileResponse)
 async def profile(
     user=Depends(require_user_id),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db) 
 ):
   return await services.profile(     user["user_id"] ,db)
 

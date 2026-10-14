@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
-
+from fastapi.middleware.cors import CORSMiddleware
 from src.users.routers import users_routes
 from src.mango_product.routers import category_router,mango_product_routes
 from src.orders.routers import order_routes
@@ -11,6 +11,7 @@ from src.seed.admin_seed import create_admin
 from src.admin.routers import admin_routes
 
 from src.utils.db import DB_Session
+
 
 
 API_PREFIX = "/api/v1"
@@ -26,6 +27,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(users_routes, prefix=API_PREFIX)
 app.include_router(category_router, prefix=API_PREFIX)
