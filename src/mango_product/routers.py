@@ -176,6 +176,20 @@ async def get_all_products(
 ):
     return await services.get_all_products(db)
 
+
+@mango_product_routes.get(
+    "/{product_id}",
+    response_model=MangoProductResponse,
+)
+async def get_id_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    return await services.get_product_by_id(
+        product_id=product_id,
+        db=db,
+    )
+
 @mango_product_routes.put("/{product_id}")
 async def update_product(
     product_id: int,

@@ -362,10 +362,7 @@ async def delete_product_image(
 # Product Retrieval Operations
 # ========================
 
-async def get_products_for_ai(db: AsyncSession):
-    query = select(MangoProduct).where(MangoProduct.is_available == True)
-    result = await db.execute(query)
-    return result.scalars().all()
+
 
 
 async def get_products_processed(
@@ -420,6 +417,30 @@ async def get_all_products(
 
     result = await db.execute(query)
     return result.scalars().all()
+
+
+async def get_product_by_id(
+        db:AsyncSession,
+        product_id:int
+):
+
+    result = await db.execute(
+        select(MangoProduct).where(
+            MangoProduct.id == product_id
+        )
+    )
+
+    product = result.scalar_one_or_none()
+
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found",
+        )
+
+    return product
+
+
 
 async def put_product(
     product_id: int,
